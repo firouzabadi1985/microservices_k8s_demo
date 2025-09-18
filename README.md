@@ -132,3 +132,42 @@ helm upgrade --install microdemo ./helm/microdemo   --namespace microdemo --crea
 
 3. Update `values.yaml` or the Helm command `--set image.registry=ghcr.io/<your>/microdemo` and tags.
 
+
+
+---
+
+## Dev Ingress (nginx) & Hosts Entry
+
+Apply the dev overlay (includes an Ingress):
+```bash
+kubectl apply -k k8s/overlays/dev
+# If using kind/minikube, add to /etc/hosts:
+# 127.0.0.1 dev.microdemo.local
+kubectl -n microdemo port-forward svc/api 8000:8000  # alternative if no ingress
+```
+
+Open: http://dev.microdemo.local/health
+
+## Prometheus Metrics & ServiceMonitor
+
+- API exposes **/metrics** (Prometheus text format).  
+- `k8s/base/servicemonitor-api.yaml` targets the `api` Service (port name `http`).  
+- Requires **Prometheus Operator** (label selector `release=prometheus` by default). Adjust labels to match your installation.
+
+## Private Registry Pull (GHCR) — ImagePullSecrets
+
+Create a Docker config JSON and secret:
+```bash
+echo -n '<YOUR_GHCR_PAT>' | base64 -w0  # create token if needed
+# Or generate ~/.docker/config.json by `docker login ghcr.io` and base64 it fully.
+kubectl -n microdemo create secret docker-registry ghcr-pull   --docker-server=ghcr.io   --docker-username=<your-gh-username-or-org>   --docker-password=<your-ghcr-pat>   --docker-email=<you@example.com>
+```
+
+The overlays include a patch `patch-imagepullsecrets.yaml` that adds:
+```yaml
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+```

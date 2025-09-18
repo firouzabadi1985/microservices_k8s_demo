@@ -17,3 +17,5 @@ images:
   - name: local/worker
     newName: local/worker
     newTag: dev
+
+  - servicemonitor-api.yaml

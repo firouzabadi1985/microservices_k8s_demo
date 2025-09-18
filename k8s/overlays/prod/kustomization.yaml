@@ -19,3 +19,7 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 3
+
+  - path: patch-imagepullsecrets.yaml
+    target:
+      kind: Deployment
