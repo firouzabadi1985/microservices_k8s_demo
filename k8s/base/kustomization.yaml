@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: microdemo
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - deployment-api.yaml
+  - service-api.yaml
+  - deployment-worker.yaml
+  - deployment-redis.yaml
+  - service-redis.yaml
+  - hpa-api.yaml
+images:
+  - name: local/api
+    newName: local/api
+    newTag: dev
+  - name: local/worker
+    newName: local/worker
+    newTag: dev
