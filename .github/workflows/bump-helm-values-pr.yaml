@@ -1,0 +1,41 @@
+name: Bump Helm Values + PR on Tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  bump-and-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: vars
+        run: echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Update values-prod.example.yaml
+        run: |
+          sed -i 's/image:\s*api: { repository: api, tag: .*/image:  api: { repository: api, tag: '${{ steps.vars.outputs.TAG }}' }/' helm/microdemo/values-prod.example.yaml || true
+          sed -i 's/image:\s*worker: { repository: worker, tag: .*/image:  worker: { repository: worker, tag: '${{ steps.vars.outputs.TAG }}' }/' helm/microdemo/values-prod.example.yaml || true
+
+      - name: Create branch
+        run: |
+          BRANCH="bump-helm-${{ steps.vars.outputs.TAG }}"
+          git checkout -b "$BRANCH"
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add helm/microdemo/values-prod.example.yaml
+          git commit -m "chore: bump Helm values to ${{ steps.vars.outputs.TAG }}"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump Helm values to ${{ steps.vars.outputs.TAG }}"
+          title: "Bump Helm values to ${{ steps.vars.outputs.TAG }}"
+          body: "Automated bump of Helm values to match the new image tag."
+          branch: "bump-helm-${{ steps.vars.outputs.TAG }}"
+          base: "main"

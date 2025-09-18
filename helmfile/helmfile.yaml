@@ -1,0 +1,14 @@
+repositories: []
+
+releases:
+  - name: microdemo-dev
+    namespace: microdemo-dev
+    chart: ../helm/microdemo
+    values:
+      - values-dev.yaml
+
+  - name: microdemo
+    namespace: microdemo
+    chart: ../helm/microdemo
+    values:
+      - values-prod.yaml

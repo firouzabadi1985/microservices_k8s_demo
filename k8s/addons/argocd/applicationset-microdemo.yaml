@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: microdemo
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            domain: dev.microdemo.local
+            imageTag: v1.0.0
+          - env: prod
+            domain: api.microdemo.example.com
+            imageTag: v1.0.0
+  template:
+    metadata:
+      name: microdemo-{{env}}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/your-org/microservices_k8s_demo.git
+        targetRevision: main
+        path: helm/microdemo
+        helm:
+          parameters:
+            - name: namespace
+              value: microdemo
+            - name: image.registry
+              value: ghcr.io/your-org/microdemo
+            - name: image.api.tag
+              value: "{{imageTag}}"
+            - name: image.worker.tag
+              value: "{{imageTag}}"
+            - name: ingress.enabled
+              value: "true"
+            - name: ingress.host
+              value: "{{domain}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: microdemo
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

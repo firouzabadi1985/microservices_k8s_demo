@@ -1,0 +1,11 @@
+namespace: microdemo-dev
+image:
+  registry: ghcr.io/your-org/microdemo
+  api: { repository: api, tag: v1.0.0 }
+  worker: { repository: worker, tag: v1.0.0 }
+ingress:
+  enabled: true
+  className: nginx
+  host: dev.api.your-real-domain.com
+  tls:
+    enabled: false

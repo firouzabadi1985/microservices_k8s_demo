@@ -1,0 +1,26 @@
+name: Bump Helm values on tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update values.yaml
+        run: |
+          TAG=${GITHUB_REF_NAME}
+          sed -i "s/^  tag: .*/  tag: ${TAG}/" helm/microdemo/values.yaml
+
+      - name: Commit & PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: bump-helm-${{ github.ref_name }}
+          commit-message: "chore: bump helm image tag to ${{ github.ref_name }}"
+          title: "Bump Helm values to ${{ github.ref_name }}"
+          body: "Auto-generated PR to bump Helm values.yaml tag"

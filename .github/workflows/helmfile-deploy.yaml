@@ -1,0 +1,42 @@
+name: Helmfile Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment (dev or prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options: [dev, prod]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.4'
+
+      - name: Install helmfile
+        run: |
+          curl -L https://github.com/helmfile/helmfile/releases/download/v0.160.0/helmfile_0.160.0_linux_amd64.tar.gz -o hf.tgz
+          tar -xzf hf.tgz helmfile && sudo mv helmfile /usr/local/bin/
+
+      - name: Write kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/.kube/config
+
+      - name: Helmfile sync
+        working-directory: helmfile
+        env:
+          TARGET_ENV: ${{ github.event.inputs.env }}
+        run: |
+          if [ "$TARGET_ENV" = "prod" ]; then
+            helmfile -e prod sync
+          else
+            helmfile -e dev sync
+          fi

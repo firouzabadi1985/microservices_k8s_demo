@@ -1,0 +1,38 @@
+name: Manual Helm Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Helm revision number to rollback to (see `helm history microdemo -n microdemo`)"
+        required: true
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.4'
+
+      - name: Write kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/.kube/config
+
+      - name: Show history
+        run: helm history microdemo -n microdemo || true
+
+      - name: Rollback
+        run: |
+          helm rollback microdemo ${{ github.event.inputs.revision }} -n microdemo
+          helm history microdemo -n microdemo

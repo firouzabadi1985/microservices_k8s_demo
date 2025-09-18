@@ -19,3 +19,6 @@ images:
     newTag: dev
 
   - servicemonitor-api.yaml
+  - grafana-dashboard-configmap.yaml
+  - service-worker.yaml
+  - servicemonitor-worker.yaml

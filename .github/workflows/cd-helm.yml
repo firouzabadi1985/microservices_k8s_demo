@@ -1,0 +1,32 @@
+name: CD Helm Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.14.0'
+
+      - name: Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
+
+      - name: Helm Upgrade
+        run: |
+          helm upgrade --install microdemo ./helm/microdemo             --namespace microdemo --create-namespace             --set image.registry=ghcr.io/${{ secrets.GHCR_USERNAME }}/microdemo             --set image.api.tag=${GITHUB_REF_NAME}             --set image.worker.tag=${GITHUB_REF_NAME}             -f helm/microdemo/values-prod.example.yaml

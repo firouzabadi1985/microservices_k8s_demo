@@ -1,0 +1,66 @@
+name: Terraform EKS (OIDC)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'infra/terraform/eks/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/eks/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TF_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        working-directory: infra/terraform/eks
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/terraform/eks
+        run: terraform plan -input=false
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TF_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        working-directory: infra/terraform/eks
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infra/terraform/eks
+        run: terraform apply -auto-approve -input=false

@@ -1,0 +1,14 @@
+namespace: microdemo
+image:
+  registry: ghcr.io/your-org/microdemo
+  api: { repository: api, tag: v1.0.0 }
+  worker: { repository: worker, tag: v1.0.0 }
+ingress:
+  enabled: true
+  className: nginx
+  host: api.your-real-domain.com
+  tls:
+    enabled: true
+    secretName: microdemo-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt

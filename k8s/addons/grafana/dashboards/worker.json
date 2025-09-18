@@ -1,0 +1,30 @@
+{
+  "title": "Microdemo Worker",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Jobs processed (rate)",
+      "targets": [
+        {
+          "expr": "rate(worker_jobs_processed_total[5m])",
+          "legendFormat": "processed"
+        }
+      ],
+      "id": 1
+    },
+    {
+      "type": "timeseries",
+      "title": "Jobs errors (rate)",
+      "targets": [
+        {
+          "expr": "rate(worker_jobs_errors_total[5m])",
+          "legendFormat": "errors"
+        }
+      ],
+      "id": 2
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

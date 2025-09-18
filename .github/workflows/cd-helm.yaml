@@ -1,0 +1,57 @@
+name: CD Helm (on tag)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ secrets.PROD_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.4'
+
+      # Expect kubeconfig to be provided as secret (base64)
+      - name: Write kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/.kube/config
+
+      - name: Helm upgrade/install
+        env:
+          REGISTRY: ghcr.io/${{ secrets.GHCR_USERNAME }}/microdemo
+          VERSION: ${{ github.ref_name }}
+        run: |
+          helm upgrade --install microdemo ./helm/microdemo             --namespace microdemo --create-namespace             --set image.registry=$REGISTRY             --set image.api.tag=$VERSION             --set image.worker.tag=$VERSION             --set ingress.enabled=true             --set ingress.className=nginx             --set ingress.host=${{ secrets.PROD_HOST }}             --set ingress.tls.enabled=true             --set ingress.tls.secretName=microdemo-tls             --set ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt
+
+
+      - name: Helm history (for rollback context)
+        if: always()
+        run: |
+          helm history microdemo -n microdemo || true
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deploy failed. Rolling back to previous revision..."
+          LAST=$(helm history microdemo -n microdemo --output json | python - <<'PY'
+import json,sys
+h=json.load(sys.stdin)
+# pick the last deployed revision before the most recent
+revs=[r for r in h if r.get('status')=='deployed']
+print(revs[-2]['revision'] if len(revs)>1 else revs[-1]['revision'])
+PY)
+          echo "Rolling back to revision $LAST"
+          helm rollback microdemo "$LAST" -n microdemo || true

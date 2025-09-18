@@ -1,0 +1,74 @@
+name: Terraform GKE (OIDC)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'infra/terraform/gke/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/gke/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Authenticate to GCP (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_TF_SA }}
+          create_credentials_file: true
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Terraform Init
+        working-directory: infra/terraform/gke
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/terraform/gke
+        run: terraform plan -input=false -var="project=${{ secrets.GCP_PROJECT }}" -var="region=${{ secrets.GCP_REGION }}"
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Authenticate to GCP (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_TF_SA }}
+          create_credentials_file: true
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Terraform Init
+        working-directory: infra/terraform/gke
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infra/terraform/gke
+        run: terraform apply -auto-approve -input=false -var="project=${{ secrets.GCP_PROJECT }}" -var="region=${{ secrets.GCP_REGION }}"

@@ -1,0 +1,19 @@
+{
+  "title": "Microdemo API",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "API Requests (rate)",
+      "targets": [
+        {
+          "expr": "rate(api_requests_total[5m])",
+          "legendFormat": "{{endpoint}}"
+        }
+      ],
+      "id": 1
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
