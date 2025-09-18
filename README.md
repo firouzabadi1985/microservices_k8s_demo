@@ -107,3 +107,28 @@ microservices_k8s_demo/
 ## Notes
 
 - For a real deployment add: logging, metrics, tracing, ingress w/ TLS, image registry + pull secrets, and a Helm chart (optional).
+
+
+---
+
+## Helm Chart (with Ingress + TLS)
+
+```bash
+# Package or install directly from the local chart
+helm upgrade --install microdemo ./helm/microdemo   --namespace microdemo --create-namespace   --set image.registry=ghcr.io/$GHCR_USERNAME/microdemo   --set image.api.tag=v1.0.0   --set image.worker.tag=v1.0.0   --set ingress.enabled=true   --set ingress.host=api.microdemo.example.com   --set ingress.tls.enabled=true   --set ingress.tls.secretName=microdemo-tls   --set ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt
+```
+
+> Requires an Ingress controller (e.g., nginx) and **cert-manager** installed in the cluster.
+
+## Push Images to GHCR (GitHub Container Registry)
+
+1. In your GitHub repo **Settings → Secrets and variables → Actions**, add:
+   - `GHCR_USERNAME` = your GitHub username or org
+   - `GHCR_PAT` = a personal access token with `write:packages`, `read:packages`
+
+2. Trigger the **Release & Push to GHCR** workflow:
+   - **Manually**: Actions → *Release & Push to GHCR* → *Run workflow* (provide `version`, e.g., `v1.0.0`)
+   - **Or by tag**: `git tag v1.0.0 && git push --tags`
+
+3. Update `values.yaml` or the Helm command `--set image.registry=ghcr.io/<your>/microdemo` and tags.
+

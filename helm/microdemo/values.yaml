@@ -1,0 +1,48 @@
+namespace: microdemo
+
+image:
+  registry: ghcr.io/your-org/microdemo
+  api:
+    repository: api
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  worker:
+    repository: worker
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+
+redis:
+  image: redis:7-alpine
+
+replicaCount:
+  api: 2
+  worker: 1
+
+service:
+  api:
+    type: ClusterIP
+    port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.microdemo.example.com
+  tls:
+    enabled: true
+    secretName: microdemo-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+
+resources:
+  api: {}
+  worker: {}
+  redis: {}
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+
+env:
+  REDIS_URL: "redis://redis:6379/0"

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: {{ .Values.namespace }}
+data:
+  REDIS_URL: "{{ .Values.env.REDIS_URL }}"
